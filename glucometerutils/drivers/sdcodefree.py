@@ -187,7 +187,7 @@ class Device(serial.SerialDevice):
     def zero_log(self):
         raise NotmplementedError
 
-    def get_readings(self):
+    def get_readings(self, with_ketone=False):
         count = self.wait_and_ready()
 
         for _ in range(count):

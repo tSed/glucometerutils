@@ -267,7 +267,7 @@ class Device(object):
     return common.GlucoseReading(
       _convert_timestamp(timestamp), float(value), meal=_MEAL_CODES[meal_flag])
 
-  def get_readings(self):
+  def get_readings(self, with_ketone=False):
     record_count = self._get_reading_count()
     for record_number in range(record_count):
       yield self._get_reading(record_number)

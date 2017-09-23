@@ -59,7 +59,7 @@ class Device(freestyle.FreeStyleHidDevice):
         """Returns the glucose unit of the device."""
         return common.UNIT_MGDL
 
-    def get_readings(self):
+    def get_readings(self, with_ketone=False):
         """Iterate through the reading records in the device."""
         for record in self._get_multirecord(b'$result?'):
             if not record or record[0] != _TYPE_GLUCOSE_READING:

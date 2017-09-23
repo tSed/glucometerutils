@@ -211,7 +211,7 @@ class Device(serial.SerialDevice):
     """
     raise NotImplementedError
 
-  def get_readings(self):
+  def get_readings(self, with_ketone=False):
     """Iterates over the reading values stored in the glucometer.
 
     Args:

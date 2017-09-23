@@ -308,7 +308,7 @@ class Device(serial.SerialDevice):
     result = self._send_command(_READ_RECORD + id_bytes)
     return self._read_response()
 
-  def get_readings(self):
+  def get_readings(self, with_ketone=False):
     count_response = self._get_reading(_INVALID_RECORD)
 
     record_count, = _STRUCT_RECORDID.unpack_from(count_response.data, 2)

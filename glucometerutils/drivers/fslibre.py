@@ -203,7 +203,7 @@ class Device(freestyle.FreeStyleHidDevice):
         # device.
         return common.UNIT_MGDL
 
-    def get_readings(self):
+    def get_readings(self, with_ketone=False):
 
         # First of all get the usually longer list of sensor readings, and
         # convert them to Readings objects.

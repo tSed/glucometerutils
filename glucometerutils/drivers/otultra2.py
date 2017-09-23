@@ -285,7 +285,7 @@ class Device(serial.SerialDevice):
     else:
       raise exceptions.InvalidGlucoseUnit(string)
 
-  def get_readings(self):
+  def get_readings(self, with_ketone=False):
     """Iterates over the reading values stored in the glucometer.
 
     Args:

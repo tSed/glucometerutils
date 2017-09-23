@@ -123,7 +123,7 @@ class Device(object):
     else:
       return common.NO_MEAL
 
-  def get_readings(self):
+  def get_readings(self, with_ketone=False):
     for record in self._get_records_reader():
       if record[_RESULT_CSV_KEY] is None:
         continue
