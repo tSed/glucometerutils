@@ -17,7 +17,8 @@ from glucometerutils import common
 from glucometerutils import exceptions
 
 _EXPORT_CSV = 'csv'
-_EXPORT_FORMATS = frozenset((_EXPORT_CSV,))
+_EXPORT_JSON_TIDEPOOL = 'json-tidepool'
+_EXPORT_FORMATS = frozenset((_EXPORT_CSV, _EXPORT_JSON_TIDEPOOL))
 
 def main():
   if sys.version_info < (3, 2):
@@ -117,6 +118,9 @@ def main():
       if args.export_format == _EXPORT_CSV:
         for reading in readings:
           print(reading.as_csv(unit))
+      elif args.export_format == _EXPORT_JSON_TIDEPOOL:
+        from glucometerutils import json_tidepool
+        print(json_tidepool.generate_tidepool_json(device_info, readings))
     elif args.action == 'datetime':
       if args.set == 'now':
         print(device.set_datetime())
