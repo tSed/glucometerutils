@@ -16,6 +16,9 @@ import sys
 from glucometerutils import common
 from glucometerutils import exceptions
 
+_EXPORT_CSV = 'csv'
+_EXPORT_FORMATS = frozenset((_EXPORT_CSV,))
+
 def main():
   if sys.version_info < (3, 2):
     raise Exception(
@@ -57,6 +60,11 @@ def main():
   parser_dump.add_argument(
     '--with-ketone', action='store_true', default=False,
     help='Enable ketone reading if available on the glucometer.')
+  parser_dump.add_argument(
+    '--export-format', action='store', choices=_EXPORT_FORMATS,
+    default=_EXPORT_CSV,
+    help=('Select the format to use for the data dump. '
+          '(default: %s)' % _EXPORT_CSV))
 
   parser_date = subparsers.add_parser(
     'datetime', help='Reads or sets the date and time of the glucometer.')
@@ -106,8 +114,9 @@ def main():
         readings = sorted(
           readings, key=lambda reading: getattr(reading, args.sort_by))
 
-      for reading in readings:
-        print(reading.as_csv(unit))
+      if args.export_format == _EXPORT_CSV:
+        for reading in readings:
+          print(reading.as_csv(unit))
     elif args.action == 'datetime':
       if args.set == 'now':
         print(device.set_datetime())
