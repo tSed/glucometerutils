@@ -95,7 +95,7 @@ def _extract_timestamp(parsed_record):
         parsed_record['second'])
 
 
-def _parse_arresult(record):
+def _parse_arresult(record, with_ketone=False):
     """Takes an array of string fields as input and parses it into a Reading."""
 
     parsed_record = _parse_record(record, _BASE_ENTRY_MAP)
@@ -127,7 +127,7 @@ def _parse_arresult(record):
         comment_parts.append('(Blood)')
         measure_method = common.BLOOD_SAMPLE
         cls = common.GlucoseReading
-    elif parsed_record['reading-type'] == 1:
+    elif with_ketone and parsed_record['reading-type'] == 1:
         comment_parts.append('(Ketone)')
         measure_method = common.BLOOD_SAMPLE
         cls = common.KetoneReading
@@ -223,6 +223,6 @@ class Device(freestyle.FreeStyleHidDevice):
         # Then get the results of explicit scans and blood tests (and other
         # events).
         for record in self._get_multirecord(b'$arresult?'):
-            reading = _parse_arresult(record)
+            reading = _parse_arresult(record, with_ketone=with_ketone)
             if reading:
                 yield reading
