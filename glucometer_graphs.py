@@ -823,6 +823,9 @@ def from_csv(csv_file, newline=''):
   fields = [ 'timestamp', 'value', 'meal', 'measure_method', 'comment' ]
   rows = []
   for row in data:
+    if len(row) != len(fields):
+      ''' Most likely ketone entry, so discard it '''
+      continue
     item = dict(zip(fields, row))
     rows.append(item)
   return rows
