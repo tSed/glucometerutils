@@ -77,7 +77,7 @@ def main():
 
   ''' This could be done directly from glucometerutils instead of via CSV '''
   with open(args.input_file, 'r', newline='') as f:
-     rows = from_csv(f)
+    rows = from_csv(f)
 
   for row in rows:
     row = parse_entry(row, args.icons)
