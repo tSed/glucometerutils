@@ -77,22 +77,22 @@ def main():
 
   ''' This could be done directly from glucometerutils instead of via CSV '''
   with open(args.input_file, 'r', newline='') as f:
-    rows, _ = from_csv(f)
+    cgm, _ = from_csv(f)
 
-  for row in rows:
+  for row in cgm:
     row = parse_entry(row, args.icons)
 
   ''' Ensure that the rows are sorted by date '''
-  rows = sorted(rows, key=lambda row: row.get('date'), reverse=False)
+  cgm = sorted(cgm, key=lambda row: row.get('date'), reverse=False)
 
   ''' Fill in gaps that might exist in the data, in order to smooth the curves and fills '''
   ''' We're using 10 minute gaps in order to have more accurate fills '''
-  rows = fill_gaps(rows, interval=dt.timedelta(minutes=10))
+  cgm = fill_gaps(cgm, interval=dt.timedelta(minutes=10))
 
   ''' If we're on the default values for units, highs and lows, check that the average
       value is under 35 (assuming that average mmol/L < 35 and average mg/dL > 35) '''
   if args.units == UNIT_MMOLL and (args.high == DEFAULT_HIGH or args.low == DEFAULT_LOW):
-    mean = round(np.mean([l.get('value') for l in rows]), 1)
+    mean = round(np.mean([l.get('value') for l in cgm]), 1)
     if mean > 35:
       args.units = UNIT_MGDL
       args.high  = convert_glucose_unit(args.high, UNIT_MMOLL)
@@ -119,7 +119,7 @@ def main():
 
   ''' Calculate the days and weeks in which we are interested '''
   ''' Note that trim_weeks should be adjusted based on the interval passed to fill_gaps() '''
-  (days, weeks) = list_days_and_weeks(rows, trim_weeks=300)
+  (days, weeks) = list_days_and_weeks(cgm, trim_weeks=300)
   totalweeks = sum([len(weeks[y]) for y in weeks])
   totaldays  = len(days)
 
@@ -129,24 +129,24 @@ def main():
   with FigurePDF(args.output_file) as pdf:
 
     ''' Overall averages for all data by hour of the day '''
-    start    = rows[0].get('date')
-    end      = rows[-1].get('date')
+    start    = cgm[0].get('date')
+    end      = cgm[-1].get('date')
     period   = start.strftime('%A, %-d %B %Y') + ' to ' + end.strftime('%A, %-d %B %Y')
     title    = 'Overall Average Glucose Summary for ' + period
 
     data = {}
-    for row in rows:
-      mpdate = dt.datetime.combine(rows[0]['date'], row.get('date').time())
+    for row in cgm:
+      mpdate = dt.datetime.combine(cgm[0]['date'], row.get('date').time())
       data[mdates.date2num(mpdate)] = {
         'value'   : row.get('value'),
         'comment' : row.get('comment'),
       }
 
     ''' Calculate max and min values for each 15 minute interval across the data set '''
-    intervals = calculate_max_min(rows)
+    intervals = calculate_max_min(cgm)
     intervaldata = {}
     for i in intervals:
-      mpdate = dt.datetime.combine(rows[0]['date'], i)
+      mpdate = dt.datetime.combine(cgm[0]['date'], i)
       intervaldata[mdates.date2num(mpdate)] = {
         'max'   : intervals.get(i).get('max'),
         'min'   : intervals.get(i).get('min'),
@@ -201,7 +201,7 @@ def main():
         title    = 'Average Glucose for ' + period
 
         weekrows = []
-        for row in rows:
+        for row in cgm:
           for dow in range(7):
             day = monday + dt.timedelta(days=dow)
             if row.get('date').date() == day.date():
@@ -271,7 +271,7 @@ def main():
       title = 'Daily Glucose Summary for ' + day.strftime('%A, %-d %B %Y')
 
       data = {}
-      for row in rows:
+      for row in cgm:
         if row.get('date').date() == day.date():
           mpdate = dt.datetime.combine(day.date(), row.get('date').time())
           data[mdates.date2num(mpdate)] = {
