@@ -266,6 +266,9 @@ def main():
             'min'   : intervals.get(i).get('min'),
           }
 
+        ''' Calculate percentile for 10-90% and 25-75% '''
+        percentiles = calculate_percentile(weekrows, [10, 25, 75, 90])
+
         ''' Calculate the mean and median blood glucose levels for the week '''
         (g_mean, g_median, a_mean, a_median) = calculate_averages(data, args)
 
@@ -286,7 +289,39 @@ def main():
             ax=ax,
             transforms={'spline':True, 'maxmin':True, 'avga1c':a_median},
             args=args,
-            color='#979797',
+            color='#dbdbdb',
+        )
+
+        ''' Draw 90/10 percentiles '''
+        percentiledata = {}
+        for i in intervals:
+          mpdate = dt.datetime.combine(monday.date(), i)
+          percentiledata[mdates.date2num(mpdate)] = {
+            'max'   : percentiles.get(i).get(90),
+            'min'   : percentiles.get(i).get(10),
+          }
+
+        generate_plot(percentiledata,
+             ax=ax,
+             transforms={'spline':True, 'maxmin':True},
+             args=args,
+             color='#b9b9b9',
+        )
+
+        ''' Draw 75/25 percentiles '''
+        percentiledata = {}
+        for i in intervals:
+          mpdate = dt.datetime.combine(monday.date(), i)
+          percentiledata[mdates.date2num(mpdate)] = {
+            'max'   : percentiles.get(i).get(75),
+            'min'   : percentiles.get(i).get(25),
+          }
+
+        generate_plot(percentiledata,
+             ax=ax,
+             transforms={'spline':True, 'maxmin':True},
+             args=args,
+             color='#979797',
         )
 
         ''' The graph with a bezier curve applied, and a boundary transform to change line colour
