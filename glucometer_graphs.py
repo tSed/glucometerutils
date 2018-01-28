@@ -77,7 +77,7 @@ def main():
 
   ''' This could be done directly from glucometerutils instead of via CSV '''
   with open(args.input_file, 'r', newline='') as f:
-    rows = from_csv(f)
+    rows, _ = from_csv(f)
 
   for row in rows:
     row = parse_entry(row, args.icons)
@@ -821,14 +821,18 @@ def from_csv(csv_file, newline=''):
   '''Returns the reading as a formatted comma-separated value string.'''
   data = csv.reader(csv_file, delimiter=',', quotechar='"')
   fields = [ 'timestamp', 'value', 'meal', 'measure_method', 'comment' ]
-  rows = []
+  cgm = []
+  samples = []
   for row in data:
     if len(row) != len(fields):
       ''' Most likely ketone entry, so discard it '''
       continue
     item = dict(zip(fields, row))
-    rows.append(item)
-  return rows
+    if 'cgm' in item.get('measure_method').lower():
+      cgm.append(item)
+    else:
+      samples.append(item)
+  return (cgm, samples)
 
 def convert_glucose_unit(value, from_unit, to_unit=None):
   """Convert the given value of glucose level between units.
