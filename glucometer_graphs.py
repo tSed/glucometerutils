@@ -713,10 +713,10 @@ def fill_gaps(rows, interval, maxinterval=dt.timedelta(days=1)):
       ''' Calculate an range for each interval, assuming a straight line between the start and
           end of the gap.
           Use n+2 so we can remove the first and last value which overlap with existing values '''
-      periods = np.linspace(start, end, n+2)
-      periods = periods[1:n+1]
-      values  = np.linspace(lower, upper, n+2)
-      values  = values[1:n+1]
+      periods = np.linspace(start, end, n+1)
+      periods = periods[1:]
+      values  = np.linspace(lower, upper, n+1)
+      values  = values[1:]
 
       for j, val in enumerate(values):
         period = mdates.num2date(periods[j])
