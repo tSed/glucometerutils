@@ -156,6 +156,9 @@ def main():
         'min'   : intervals.get(i).get('min'),
       }
 
+    ''' Calculate percentile for 10-90% and 25-75% '''
+    percentiles = calculate_percentile(cgm, [10, 25, 75, 90])
+
     ''' Calculate the mean and median blood glucose and HbA1c levels '''
     (g_mean, g_median, a_mean, a_median) = calculate_averages(data, args)
 
@@ -172,6 +175,38 @@ def main():
     ''' The maxmin fill (maximum and minimum values for each 15 minute
         period of the data set, by day) '''
     generate_plot(intervaldata,
+         ax=ax,
+         transforms={'spline':True, 'maxmin':True},
+         args=args,
+         color='#dbdbdb',
+    )
+
+    ''' Draw 90/10 percentiles '''
+    percentiledata = {}
+    for i in intervals:
+      mpdate = dt.datetime.combine(cgm[0]['date'], i)
+      percentiledata[mdates.date2num(mpdate)] = {
+        'max'   : percentiles.get(i).get(90),
+        'min'   : percentiles.get(i).get(10),
+      }
+
+    generate_plot(percentiledata,
+         ax=ax,
+         transforms={'spline':True, 'maxmin':True},
+         args=args,
+         color='#b9b9b9',
+    )
+
+    ''' Draw 75/25 percentiles '''
+    percentiledata = {}
+    for i in intervals:
+      mpdate = dt.datetime.combine(cgm[0]['date'], i)
+      percentiledata[mdates.date2num(mpdate)] = {
+        'max'   : percentiles.get(i).get(75),
+        'min'   : percentiles.get(i).get(25),
+      }
+
+    generate_plot(percentiledata,
          ax=ax,
          transforms={'spline':True, 'maxmin':True},
          args=args,
@@ -673,6 +708,29 @@ def calculate_averages(data, args):
   else:
     raise ValueError('Unknown blood glucose units for HbA1c calculations')
   return (g_mean, g_median, a_mean, a_median)
+
+
+def calculate_percentile(data, percentile):
+
+  intervals = {}
+
+  for d in data:
+    date = d.get('date')
+    date = date.replace(minute=int(date.minute/INTERVAL)*INTERVAL, second=0, microsecond=0, tzinfo=None)
+    time = date.time()
+
+    if not time in intervals:
+      intervals[time] = []
+
+    intervals[time].append(d.get('value'))
+
+  percentiles = {}
+  for i, time in enumerate(sorted(intervals.keys())):
+    percentiles[time] = {}
+    for q in percentile:
+      percentiles[time][q] = np.percentile(intervals[time], q, interpolation='linear')
+
+  return percentiles
 
 
 def calculate_max_min(data):
