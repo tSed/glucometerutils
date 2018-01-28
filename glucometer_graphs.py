@@ -169,9 +169,6 @@ def main():
     ax.set_title(title)
     figure.set_tight_layout({'pad':3})
 
-    ''' Draw the target range '''
-    ax.axhspan(args.low, args.high, facecolor='#0072b2', edgecolor='#a8a8a8', alpha=0.1, zorder=15)
-
     ''' The maxmin fill (maximum and minimum values for each 15 minute
         period of the data set, by day) '''
     generate_plot(intervaldata,
@@ -212,6 +209,10 @@ def main():
          args=args,
          color='#979797',
     )
+
+    ''' Draw the target range '''
+    ax.axhspan(args.low, args.high, facecolor='#0072b2', edgecolor='#a8a8a8', alpha=0.2, zorder=15)
+
 
     ''' The graph with a bezier curve applied, and a boundary transform to change line colour
         above and below the target values '''
