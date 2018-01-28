@@ -189,7 +189,7 @@ def main():
     ax.clear()
 
 
-    ''' Overall averages for a week by hour of the dday '''
+    ''' Overall averages for a week by hour of the day '''
     cnt = 0
     for year in reversed(sorted(weeks.keys())):
       for week in reversed(sorted(weeks[year].keys())):
