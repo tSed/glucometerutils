@@ -77,13 +77,17 @@ def main():
 
   ''' This could be done directly from glucometerutils instead of via CSV '''
   with open(args.input_file, 'r', newline='') as f:
-    cgm, _ = from_csv(f)
+    cgm, blood_samples = from_csv(f)
 
   for row in cgm:
     row = parse_entry(row, args.icons)
 
+  for row in blood_samples:
+    row = parse_entry(row, args.icons)
+
   ''' Ensure that the rows are sorted by date '''
   cgm = sorted(cgm, key=lambda row: row.get('date'), reverse=False)
+  blood_samples = sorted(blood_samples, key=lambda row: row.get('date'), reverse=False)
 
   ''' Fill in gaps that might exist in the data, in order to smooth the curves and fills '''
   ''' We're using 10 minute gaps in order to have more accurate fills '''
@@ -282,6 +286,17 @@ def main():
       ''' Calculate the mean and median blood glucose levels for the day '''
       (g_mean, g_median, a_mean, a_median) = calculate_averages(data, args)
 
+      start_of_day = dt.datetime(day.year, day.month, day.day, 0, 0, 0, 0)
+      end_of_day   = dt.datetime(day.year, day.month, day.day, 23, 59, 59, 999999)
+      smbg = {}
+      for row in sparse_series_align_period(blood_samples, interval=dt.timedelta(minutes=10),
+                                            start_date=start_of_day, end_date=end_of_day):
+        mpdate = dt.datetime.combine(day.date(), row.get('date').time())
+        smbg[mdates.date2num(mpdate)] = {
+          'value'   : row.get('value'),
+          'comment' : row.get('comment'),
+        }
+
       if cnt % nrows == 0:
         figure = Figure(figsize=args.pagesize)
         canvas = FigureCanvas(figure)
@@ -308,6 +323,14 @@ def main():
           transforms={'spline':True, 'fill':True},
           args=args,
           )
+
+      ''' Plot SMBG measures '''
+      generate_plot(smbg,
+          ax=ax,
+          transforms={'dots':True},
+          args=args,
+          color=BLUE,
+      )
 
       ''' Save the graph to the output PDF if we're at the end of the page '''
       if (cnt + 1) % nrows == 0 or (cnt + 1) == totaldays:
@@ -682,6 +705,98 @@ def calculate_max_min(data):
       intervals[time]['max'] = d.get('value')
 
   return intervals
+
+def sparse_entry(date, origin=None):
+  period = mdates.num2date(date)
+  period = period.replace(microsecond=0, tzinfo=None)
+
+  measure_method = 'None'
+
+  item = {
+      'date': period,
+      'meal': origin.get('meal', '') if origin else '',
+      'value': origin.get('value', '') if origin else None,
+      'comment': origin.get('comment', '') if origin else '',
+      'timestamp': period.strftime('%Y-%m-%dT%H:%M:%S'),
+      'measure_method': origin.get('measure_method', 'Estimate') if origin else 'None',
+  }
+  return item
+
+def sparse_series_align_period(rows, interval, start_date, end_date):
+  '''
+  '''
+  filledrows = []
+
+  ''' given period out of the points' period. '''
+  if end_date < rows[0].get('date') or rows[-1].get('date') < start_date:
+    start = start_date
+    end   = end_date
+
+    n       = (end - start) // interval
+    periods = np.linspace(mdates.date2num(start), mdates.date2num(end), n+1)
+    filledrows.extend([sparse_entry(date) for date in periods])
+    return filledrows
+
+
+  ''' points' periods somehow overlaps the given period. '''
+
+  ''' pad before the first point. '''
+  if start_date < rows[0].get('date'):
+    start = start_date
+    end   = rows[0].get('date')
+
+    n       = (end - start) // interval
+    periods = np.linspace(mdates.date2num(start), mdates.date2num(end), n+1)
+    periods = periods[:-1]
+    filledrows.extend([sparse_entry(date) for date in periods])
+
+  ''' fill gaps on teh overlapping period. '''
+  for i, row in enumerate(rows):
+    if i >= len(rows) - 1:
+      continue
+
+    if rows[i+1].get('date') < start_date:
+      continue
+
+    elif rows[i].get('date') < start_date and start_date < rows[i+1].get('date'):
+      start = start_date
+      filledrows.append(sparse_entry(mdates.date2num(start)))
+
+    else:
+      start = rows[i].get('date')
+      filledrows.append(sparse_entry(mdates.date2num(start), rows[i]))
+
+    if end_date < rows[i].get('date'):
+      break
+    elif rows[i+1].get('date') < end_date:
+      end = rows[i+1].get('date')
+    else:
+      end = end_date
+
+    n       = (end - start) // interval
+    periods = np.linspace(mdates.date2num(start), mdates.date2num(end), n+1)
+    periods = periods[1:-1]
+
+    filledrows.extend([sparse_entry(date) for date in periods])
+
+    if end == end_date:
+      filledrows.append(sparse_entry(mdates.date2num(end)))
+
+  ''' pad after the last point. '''
+  if rows[-1].get('date') < end_date:
+    start = rows[-1].get('date')
+    end   = end_date
+
+    filledrows.append(sparse_entry(mdates.date2num(start), rows[-1]))
+
+    n       = (end - start) // interval
+    periods = np.linspace(mdates.date2num(start), mdates.date2num(end), n+1)
+    periods = periods[1:]
+
+    filledrows.extend([sparse_entry(date) for date in periods])
+
+  return filledrows
+
 
 def fill_gaps(rows, interval, maxinterval=dt.timedelta(days=1)):
   ''' Fill in time gaps that may exist in a set of rows, in order to smooth drawn curves and fills
