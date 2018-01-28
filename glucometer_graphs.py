@@ -495,6 +495,9 @@ def generate_plot(data, ax=None, transforms={}, args=[], **plot_args):
     z = np.clip(y, args.low, None)
     ax.fill_between(x, y, z, interpolate=True, facecolor=RED, alpha=0.7, zorder=20, **plot_args)
 
+  elif 'dots' in transforms and transforms.get('dots') is True:
+    ax.plot(x, y, linestyle=' ', marker='+', alpha=1, zorder=30, **plot_args)
+
   elif maxmin:
     ax.fill_between(x, y, z, interpolate=True, alpha=0.5, zorder=10, **plot_args)
 
